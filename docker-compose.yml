@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - db:/var/lib/mysql
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  app:
+    image: nextcloud:apache
+    restart: always
+    ports:
+      - 8080:80
+    volumes:
+      - nextcloud:/var/www/html
+    environment:
+      - MYSQL_HOST=db
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+
+  cron:
+    image: nextcloud:apache
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+
+  code:
+    image: collabora/code
+    restart: always
+    ports:
+      - 9980:9980
+    cap_add:
+      - MKNOD
+    environment:
+      - extra_params="--o:ssl.enable=false"
+      - domain=${CODE_DOMAIN}
+      - username=${CODE_USERNAME}
+      - password=${CODE_PASSWORD}
+
+volumes:
+  db:
+  nextcloud:
