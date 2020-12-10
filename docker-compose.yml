@@ -8,6 +8,7 @@ services:
     volumes:
       - db:/var/lib/mysql
       - /etc/localtime:/etc/localtime:ro
+    env_file: .env
 
   redis:
     image: redis:5-alpine
