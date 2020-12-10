@@ -7,9 +7,10 @@ services:
     restart: always
     volumes:
       - db:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
 
   redis:
-    image: redis:alpine
+    image: redis:5-alpine
     restart: always
 
   app:
