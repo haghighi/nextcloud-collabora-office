@@ -1,5 +1,7 @@
 # Nextcloud + Collabora Online + Nginx (as reverse proxy)   
 
+**Attention**: Read `docker-compose.yml` carefully! it may contains personal changes. (e.g. `/opt/nextcloud/data:/var/nc-data:rw`)
+
 ## Spec   
 * **Nextcloud Domain**: `cloud.mycompany.com`   
 * **Collabora Online Domain**: `collabora.mycompany.com`   
