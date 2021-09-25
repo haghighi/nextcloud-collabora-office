@@ -1,0 +1,95 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:11-alpine
+    restart: always
+    container_name: nextcloud-db
+    user: postgres:postgres
+    volumes:
+      - nextcloud-database-vol:/var/lib/postgresql/data:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment: 
+      - "POSTGRES_DB=${MY_POSTGRES_DB}"
+      - "POSTGRES_USER=${MY_POSTGRES_USER}"
+      - "POSTGRES_PASSWORD=${MY_POSTGRES_PASSWORD}"
+      - "LANG=en_US.utf8"
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    command: redis-server --requirepass ${MY_REDIS_PASSWORD}
+    restart: always
+    volumes:
+      - redis-data-vol:/data:rw
+
+  app:
+    image: nextcloud:apache
+    container_name: nextcloud
+    restart: always
+    volumes:
+      - /opt/nextcloud/www:/var/www/html:rw
+      - /opt/nextcloud/config:/var/www/html/config:rw
+      - /opt/nextcloud/data:/var/nc-data:rw
+      - /opt/nextcloud/config/php.ini:/usr/local/etc/php/php.ini:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - "PHP_MEMORY_LIMIT=2048M"
+    ports:
+      - 127.0.0.1:8080:80
+    depends_on:
+      - db
+      - redis
+    #extra_hosts:
+    #  - "collabora.mycompany.com:a.b.c.d"
+    #  - "cloud.mycompany.com:a.b.c.d"
+
+  cron:
+    image: nextcloud:apache
+    restart: always
+    volumes:
+      - /opt/nextcloud/www:/var/www/html:rw
+      - /opt/nextcloud/config:/var/www/html/config:rw
+      - /opt/nextcloud/data:/var/nc-data:rw
+      - /opt/nextcloud/config/php.ini:/usr/local/etc/php/php.ini:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+
+  code:
+    image: collabora/code:latest
+    container_name: collabora_online
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /opt/nextcloud/fonts:/opt/collaboraoffice6.4/share/fonts/truetype/local:ro
+    cap_add:
+      - MKNOD
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    ports:
+      - 127.0.0.1:9980:9980
+    #extra_hosts:
+    #  - "collabora.mycompany.com:a.b.c.d"
+    #  - "cloud.mycompany.com:a.b.c.d"
+    environment:
+      - "domain=cloud\\.mycompany\\.com"
+      - "extra_params=--o:ssl.enable=false --o:ssl.termination=true"
+      - "username=admin"
+      - "password=${MY_CODE_PASSWORD}"
+
+volumes:
+  nextcloud-database-vol:
+    # external: true
+  redis-data-vol:
+    # external: true
+
+# networks:
+#   backend:
